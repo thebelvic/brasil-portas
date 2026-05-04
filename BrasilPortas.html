@@ -223,6 +223,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);height:100vh;ov
       <div class="sk-btn" onclick="changeFontSize(+2)">A⁺</div>
       <div class="sk-btn" onclick="rotateText(-15)">↺</div>
       <div class="sk-btn" onclick="rotateText(+15)">↻</div>
+      <div class="sk-btn danger" onclick="deleteSelectedText()" title="Apagar texto selecionado">🗑 Txt</div>
       <div class="sk-btn" id="sk-tool-erase" onclick="setTool('erase')">⬜ Apagar</div>
       <div class="sk-sep"></div>
       <div class="sk-color sel" style="background:#5c3d1e;" onclick="setColor('#5c3d1e',this)"></div>
@@ -699,7 +700,13 @@ function updField(f,v){const p=active();if(!p)return;p[f]=v;renderSB();scheduleS
 function updDoor(pid,id,f,v){
   const p=projects.find(x=>x.id===pid);if(!p)return;
   p.doors=p.doors.map(d=>d.id===id?{...d,[f]:v}:d);
-  renderInfoBar();scheduleSave();
+  if(f==='tipo'||f==='lado'){
+    renderContent();
+    renderInfoBar();
+  } else {
+    renderInfoBar();
+  }
+  scheduleSave();
 }
 function rmDoor(pid,id){
   const p=projects.find(x=>x.id===pid);if(!p)return;
@@ -879,6 +886,14 @@ function rotateText(d){
   t.angle=(t.angle||0)+d;
   const div=document.getElementById(t.id);
   if(div)div.style.transform=`rotate(${t.angle}deg)`;
+}
+
+function deleteSelectedText(){
+  if(!skSelectedTxt)return;
+  const div=document.getElementById(skSelectedTxt);
+  if(div)div.remove();
+  skTexts=skTexts.filter(t=>t.id!==skSelectedTxt);
+  skSelectedTxt=null;
 }
 function addTextBox(x,y){
   const id='txt'+(++skTxtCnt);const fs=22;const color=skColor;
