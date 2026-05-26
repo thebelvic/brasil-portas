@@ -855,61 +855,59 @@ function compartilharWhatsApp(){
 }
 
 /* ── INIT ── */
-window.addEventListener('DOMContentLoaded',function(){
-  var data=loadAll(),keys=Object.keys(data).sort(function(a,b){return b.localeCompare(a);});
-  if(keys.length)loadDay(keys[0]);else newDay();
-});
+// init handled by Firebase sync
 
-// ── FIREBASE SYNC ──────────────────────────────────────────────
+// ── FIREBASE SYNC (Firebase-first, no localStorage conflict) ──
 (function(){
   const FB_KEY = 'agenda_obras_portas';
-  const LSKEY = 'obras_agenda_v2';
-  let _fbIgnore = false;
-  let _fbIgnoreTimer = null;
+  window.__appData = {};  // in-memory cache
+  let _savePending = false;
+  let _saveTimer = null;
 
-  function _setIgnore(ms){
-    _fbIgnore = true;
-    clearTimeout(_fbIgnoreTimer);
-    _fbIgnoreTimer = setTimeout(()=>{ _fbIgnore=false; }, ms||2000);
-  }
-
-  // Patch saveAll to push to Firebase (but NOT during reload)
-  const _origSave = typeof saveAll==='function' ? saveAll : null;
-  if(_origSave) window.saveAll = function(d){
-    _origSave(d);
-    if(!_fbIgnore && window.__fbSave && d!==undefined){
-      window.__fbSave(FB_KEY, d);
-    }
+  // Override loadAll to use memory cache
+  window.loadAll = function(){
+    return window.__appData || {};
   };
 
-  function _fbReload(data){
-    _setIgnore(3000); // block saves for 3s while reloading
-    try{
-      localStorage.setItem(LSKEY, JSON.stringify(data));
-      const keys = Object.keys(data||{}).sort((a,b)=>b.localeCompare(a));
+  // Override saveAll to write to memory + debounced Firebase save
+  window.saveAll = function(d){
+    if(d !== undefined) window.__appData = d;
+    _savePending = true;
+    clearTimeout(_saveTimer);
+    _saveTimer = setTimeout(function(){
+      if(window.__fbSave) window.__fbSave(FB_KEY, window.__appData);
+      _savePending = false;
+    }, 1500); // wait 1.5s after last change before saving
+  };
+
+  // Load from Firebase on start, then render
+  function _fbInit(){
+    if(!window.__fbLoad){ setTimeout(_fbInit, 200); return; }
+    window.__fbLoad(FB_KEY, function(data){
+      if(data) window.__appData = data;
+      // Init the UI
+      var keys = Object.keys(window.__appData).sort(function(a,b){return b.localeCompare(a);});
       if(keys.length && typeof loadDay==='function') loadDay(keys[0]);
+      else if(typeof newDay==='function') newDay();
       if(typeof renderSB==='function') renderSB();
-    }catch(e){ console.warn('fbReload error:',e); }
+    });
+
+    // Listen for changes from OTHER devices only (not while user is editing)
+    window.__fbListen(FB_KEY, function(data){
+      if(_savePending || !data) return; // don't interrupt editing
+      const incoming = JSON.stringify(data);
+      const current = JSON.stringify(window.__appData);
+      if(incoming !== current){
+        window.__appData = data;
+        var keys = Object.keys(data).sort(function(a,b){return b.localeCompare(a);});
+        if(keys.length && typeof loadDay==='function') loadDay(keys[0]);
+        if(typeof renderSB==='function') renderSB();
+      }
+    });
   }
 
-  function _fbInit(){
-    if(!window.__fbLoad) return;
-    // Load once on start
-    window.__fbLoad(FB_KEY, function(data){
-      if(!data) return;
-      const local = localStorage.getItem(LSKEY);
-      const localParsed = local ? JSON.parse(local) : null;
-      const isEmpty = !localParsed || !Object.keys(localParsed).length;
-      if(isEmpty) _fbReload(data);
-    });
-    // Listen for changes from OTHER devices only
-    window.__fbListen(FB_KEY, function(data){
-      if(_fbIgnore || !data) return;
-      const current = localStorage.getItem(LSKEY);
-      const incoming = JSON.stringify(data);
-      if(current !== incoming) _fbReload(data);
-    });
-  }
+  // Remove localStorage dependency
+  try{ localStorage.removeItem('obras_agenda_v2'); }catch(e){}
 
   if(window.__fbReady) _fbInit();
   else window.addEventListener('fbReady', _fbInit, {once:true});
