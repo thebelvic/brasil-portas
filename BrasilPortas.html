@@ -695,28 +695,35 @@ function buildEdit(p){
         ${d.tipo?`<div class="gc-tag gc-type-badge"><span>🚪</span>${esc(d.tipo)}</div>`:''}
 
         <!-- calculadora folha -->
-        ${d.tipo==='Porta de Giro' && (d.vl||d.va) ? `
-        <div style="background:linear-gradient(135deg,#e8f5e9,#f1f8e9);border:1.5px solid #a5d6a7;border-radius:10px;padding:12px 14px;margin:4px 0;">
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
-            <span style="font-size:15px;">📐</span>
-            <span style="font-size:11px;font-weight:700;color:#2e7d32;letter-spacing:.5px;text-transform:uppercase;">Medida da Folha</span>
+        ${d.tipo==='Porta de Giro' ? `
+        <div style="background:#f1f8e9;border:1.5px solid #a5d6a7;border-radius:10px;padding:10px 12px;margin:4px 0;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;color:#2e7d32;letter-spacing:.5px;">📐 MEDIDA DA FOLHA</span>
+            ${(d.fl!=null||d.fa!=null)?`<button onclick="resetFolha('${p.id}',${d.id})" style="font-size:9px;background:#fff;border:1px solid #a5d6a7;border-radius:5px;padding:2px 7px;color:#66bb6a;cursor:pointer;">↺ Auto</button>`:''}
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-            <div style="background:#fff;border-radius:7px;padding:8px 10px;border:1px solid #c8e6c9;text-align:center;">
-              <div style="font-size:10px;color:#66bb6a;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Largura</div>
-              <div style="font-size:22px;font-weight:800;color:#2e7d32;font-family:'Barlow Condensed',sans-serif;">${d.vl ? (d.vl - 6) : '—'}<span style="font-size:11px;font-weight:400;color:#81c784;"> cm</span></div>
-              <div style="font-size:9px;color:#a5d6a7;margin-top:2px;">${d.vl} − 6 = ${d.vl ? (d.vl-6) : '?'}</div>
-            </div>
-            <div style="background:#fff;border-radius:7px;padding:8px 10px;border:1px solid #c8e6c9;text-align:center;">
-              <div style="font-size:10px;color:#66bb6a;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Altura</div>
-              <div style="font-size:22px;font-weight:800;color:#2e7d32;font-family:'Barlow Condensed',sans-serif;">${d.va ? (d.va - 4) : '—'}<span style="font-size:11px;font-weight:400;color:#81c784;"> cm</span></div>
-              <div style="font-size:9px;color:#a5d6a7;margin-top:2px;">${d.va} − 4 = ${d.va ? (d.va-4) : '?'}</div>
-            </div>
+            <label style="display:flex;flex-direction:column;gap:3px;">
+              <span style="font-size:9px;color:#66bb6a;font-weight:700;text-transform:uppercase;">Largura (cm)</span>
+              <input type="number" class="gc-inp" 
+                value="${d.fl!=null ? d.fl : (d.vl ? d.vl-6 : '')}" 
+                placeholder="${d.vl ? d.vl-6 : '—'}"
+                oninput="updDoor('${p.id}',${d.id},'fl',+this.value||null)"
+                style="font-size:18px;font-weight:800;color:#2e7d32;text-align:center;padding:6px;">
+              <span style="font-size:9px;color:#a5d6a7;text-align:center;">${d.vl?`Vão ${d.vl} − 6`:''}</span>
+            </label>
+            <label style="display:flex;flex-direction:column;gap:3px;">
+              <span style="font-size:9px;color:#66bb6a;font-weight:700;text-transform:uppercase;">Altura (cm)</span>
+              <input type="number" class="gc-inp"
+                value="${d.fa!=null ? d.fa : (d.va ? d.va-4 : '')}"
+                placeholder="${d.va ? d.va-4 : '—'}"
+                oninput="updDoor('${p.id}',${d.id},'fa',+this.value||null)"
+                style="font-size:18px;font-weight:800;color:#2e7d32;text-align:center;padding:6px;">
+              <span style="font-size:9px;color:#a5d6a7;text-align:center;">${d.va?`Vão ${d.va} − 4`:''}</span>
+            </label>
           </div>
-          <div style="margin-top:8px;font-size:10px;color:#81c784;text-align:center;">Folha: <strong style="color:#2e7d32;">${d.vl?(d.vl-6):'?'} × ${d.va?(d.va-4):'?'} cm</strong></div>
         </div>` : ''}
 
-        <!-- observação -->
+        <!-- observação --><!-- observação -->
         <label>
           <span class="gc-lbl">Observação</span>
           <input class="gc-inp" type="text" value="${esc(d.nota||'')}" placeholder="Ex: lado da dobradiça, cor, acabamento…" oninput="updDoor('${p.id}',${d.id},'nota',this.value)">
@@ -771,6 +778,8 @@ function buildPreview(p){
           </div>`:''}
           ${d.lado?`<div style="background:${d.lado==='Direito'?'#e8f5e9':'#e3f2fd'};border:1px solid ${d.lado==='Direito'?'#a5d6a7':'#90caf9'};border-radius:5px;padding:2px 5px;font-size:8px;color:${d.lado==='Direito'?'#2e7d32':'#1565c0'};font-weight:700;text-align:center;width:100%;line-height:1.3;">${d.lado==='Direito'?'→':'←'} ${d.lado}</div>`:''}
           ${d.tipo?`<div style="background:#fff3e0;border:1px solid #ffcc80;border-radius:5px;padding:2px 5px;font-size:8px;color:#e65100;font-weight:700;text-align:center;width:100%;line-height:1.3;">🚪 ${esc(d.tipo)}</div>`:''}
+          
+          \${d.tipo==='Porta de Giro'?\`<div style="background:#e8f5e9;border:1.5px solid #a5d6a7;border-radius:6px;padding:4px 6px;width:100%;margin-top:2px;"><div style="font-size:7px;color:#66bb6a;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">📐 Folha</div><div style="display:flex;justify-content:space-between;"><span style="font-size:9px;color:#2e7d32;font-weight:700;">L: \${d.fl!=null?d.fl:(d.vl?d.vl-6:'—')} cm</span><span style="font-size:9px;color:#2e7d32;font-weight:700;">A: \${d.fa!=null?d.fa:(d.va?d.va-4:'—')} cm</span></div></div>\`:''}
           ${d.nota?`<div style="background:#e8f4fd;border:1px solid #90caf9;border-radius:5px;padding:2px 5px;font-size:8px;color:#1565c0;font-weight:600;text-align:center;width:100%;line-height:1.3;">📝 ${esc(d.nota)}</div>`:''}
           ${d.sketch?`<div style="background:#faf5ec;border:1px solid var(--gold);border-radius:5px;padding:2px 5px;font-size:8px;color:var(--brown);font-weight:700;text-align:center;width:100%;">✏️ Com esboço</div>`:''}
         </div>`).join('')}
@@ -812,7 +821,7 @@ function rmDoor(pid,id){
 }
 function addDoor(pid){
   const p=projects.find(x=>x.id===pid);if(!p)return;
-  p.doors=[...p.doors,{id:gid++,lp:10,vl:80,va:210,tipo:'',lado:'',nota:'',sketch:null}];
+  p.doors=[...p.doors,{id:gid++,lp:10,vl:80,va:210,tipo:'',lado:'',nota:'',fl:null,fa:null,sketch:null}];
   renderAll();scheduleSave();
 }
 function clearSketch(pid,id){
