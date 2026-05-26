@@ -694,6 +694,28 @@ function buildEdit(p){
         </label>
         ${d.tipo?`<div class="gc-tag gc-type-badge"><span>🚪</span>${esc(d.tipo)}</div>`:''}
 
+        <!-- calculadora folha -->
+        ${d.tipo==='Porta de Giro' && (d.vl||d.va) ? `
+        <div style="background:linear-gradient(135deg,#e8f5e9,#f1f8e9);border:1.5px solid #a5d6a7;border-radius:10px;padding:12px 14px;margin:4px 0;">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+            <span style="font-size:15px;">📐</span>
+            <span style="font-size:11px;font-weight:700;color:#2e7d32;letter-spacing:.5px;text-transform:uppercase;">Medida da Folha</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div style="background:#fff;border-radius:7px;padding:8px 10px;border:1px solid #c8e6c9;text-align:center;">
+              <div style="font-size:10px;color:#66bb6a;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Largura</div>
+              <div style="font-size:22px;font-weight:800;color:#2e7d32;font-family:'Barlow Condensed',sans-serif;">${d.vl ? (d.vl - 6) : '—'}<span style="font-size:11px;font-weight:400;color:#81c784;"> cm</span></div>
+              <div style="font-size:9px;color:#a5d6a7;margin-top:2px;">${d.vl} − 6 = ${d.vl ? (d.vl-6) : '?'}</div>
+            </div>
+            <div style="background:#fff;border-radius:7px;padding:8px 10px;border:1px solid #c8e6c9;text-align:center;">
+              <div style="font-size:10px;color:#66bb6a;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Altura</div>
+              <div style="font-size:22px;font-weight:800;color:#2e7d32;font-family:'Barlow Condensed',sans-serif;">${d.va ? (d.va - 4) : '—'}<span style="font-size:11px;font-weight:400;color:#81c784;"> cm</span></div>
+              <div style="font-size:9px;color:#a5d6a7;margin-top:2px;">${d.va} − 4 = ${d.va ? (d.va-4) : '?'}</div>
+            </div>
+          </div>
+          <div style="margin-top:8px;font-size:10px;color:#81c784;text-align:center;">Folha: <strong style="color:#2e7d32;">${d.vl?(d.vl-6):'?'} × ${d.va?(d.va-4):'?'} cm</strong></div>
+        </div>` : ''}
+
         <!-- observação -->
         <label>
           <span class="gc-lbl">Observação</span>
@@ -1227,14 +1249,11 @@ renderAll();
           (Array.isArray(localParsed) && !localParsed.length) ||
           (typeof localParsed==='object' && !Array.isArray(localParsed) && !Object.keys(localParsed).length);
         if(isEmpty){
-          localStorage.setItem('brasil_portas_v1', JSON.stringify(data));
-          if(typeof load==='function') load();
-          if(typeof render==='function') render();
-          else if(typeof renderAll==='function') renderAll();
-          else if(typeof renderSB==='function'){
-            renderSB();
-            if(typeof renderContent==='function') renderContent();
-          }
+          const fixed = window.__fixArrays ? window.__fixArrays(data) : data;
+          localStorage.setItem('brasil_portas_v1', JSON.stringify(fixed));
+          if(typeof loadData==='function') loadData();
+          else if(typeof load==='function') load();
+          if(typeof renderAll==='function') renderAll();
         }
       }catch(e){ console.warn('fbLoad error:',e); }
     });
@@ -1245,17 +1264,14 @@ renderAll();
     window.__fbListen('brasil_portas', function(data){
       if(!_ready || !data) return;
       try{
-        const incoming = JSON.stringify(data);
+        const fixed = window.__fixArrays ? window.__fixArrays(data) : data;
+        const incoming = JSON.stringify(fixed);
         const current = localStorage.getItem('brasil_portas_v1');
         if(incoming !== current){
-          localStorage.setItem('brasil_portas_v1', JSON.stringify(data));
-          if(typeof load==='function') load();
-          if(typeof render==='function') render();
-          else if(typeof renderAll==='function') renderAll();
-          else if(typeof renderSB==='function'){
-            renderSB();
-            if(typeof renderContent==='function') renderContent();
-          }
+          localStorage.setItem('brasil_portas_v1', JSON.stringify(fixed));
+          if(typeof loadData==='function') loadData();
+          else if(typeof load==='function') load();
+          if(typeof renderAll==='function') renderAll();
         }
       }catch(e){}
     });
